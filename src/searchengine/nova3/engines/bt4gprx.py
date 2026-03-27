@@ -59,15 +59,13 @@ class bt4gprx(object):
 
     def search(self, term, cat="all"):
         pagenumber = 1
-        all_results = []
         while True:
             result_page = self.search_page(term, pagenumber, cat)
             if result_page:
-                all_results.extend(result_page)
+                self.pretty_print_results(result_page)
             else:
                 break
             pagenumber = pagenumber + 1
-        self.pretty_print_results(all_results)
 
     def search_page(self, term, pagenumber, cat):
         try:
