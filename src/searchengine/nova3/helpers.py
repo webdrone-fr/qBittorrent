@@ -36,6 +36,7 @@ import socket
 import ssl
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -127,6 +128,39 @@ def retrieve_url(url: str, custom_headers: Mapping[str, str] = {}, request_data:
         dataStr = html.unescape(dataStr)
 
     return dataStr
+
+
+def _retrieve_url_persona(url: str, unescape_html_entities: bool = True) -> str:
+    import json
+
+    person_central_url = os.environ["PERSONA_CENTRAL_URL"]
+
+    payload = json.dumps({
+        "url": url,
+    }).encode("utf-8")
+
+    request = urllib.request.Request(
+        person_central_url + "/generic/search",
+        data=payload,
+        headers={
+            "Content-Type": "application/json"
+        }
+    )
+
+    try:
+        response = urllib.request.urlopen(request)
+        data = json.loads(response.read().decode("utf-8"))
+        html_content = data["sourceCode"]
+        if unescape_html_entities:
+            html_content = html.unescape(html_content)
+        return html_content
+    except urllib.error.HTTPError as e:
+        if e.code == 531:
+            time.sleep(1)
+            return _retrieve_url_persona(url, unescape_html_entities)
+    except Exception as e:
+        print(f"Persona error: {e}", file=sys.stderr)
+        return ""
 
 
 def download_file(url: str, referer: Optional[str] = None, ssl_context: Optional[ssl.SSLContext] = None) -> str:
