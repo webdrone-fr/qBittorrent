@@ -29,6 +29,8 @@ import math
 import time
 import gzip
 from io import BytesIO
+
+from helpers import _retrieve_url_persona
 from novaprinter import prettyPrinter
 import urllib.parse
 
@@ -56,7 +58,7 @@ class btdig(object):
         }
 
         url = f"{self.url}/search?q={what.replace(' ', '+')}&order=0"
-        response = self.get_response(urllib.request.Request(url, headers=headers))
+        response = _retrieve_url_persona(url)
 
         results_match = re.search(r'<span style="color:rgb\(100, 100, 100\);padding:2px 10px">(\d+) results found', response)
         if results_match:
@@ -70,18 +72,8 @@ class btdig(object):
         for page in range(1, total_pages):
             time.sleep(1)  # Sleep for 1 second between requests
             url = f"{self.url}/search?q={what.replace(' ', '+')}&p={page}&order=0"
-            response = self.get_response(urllib.request.Request(url, headers=headers))
+            response = _retrieve_url_persona(url)
             self.parse_page(response)
-
-    def get_response(self, req):
-        try:
-            with urllib.request.urlopen(req) as response:
-                if response.info().get('Content-Encoding') == 'gzip':
-                    gzip_file = gzip.GzipFile(fileobj=BytesIO(response.read()))
-                    return gzip_file.read().decode('utf-8', errors='ignore')
-                return response.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            return ""
 
     def parse_page(self, html_content):
         result_blocks = re.finditer(r'<div class="one_result".*?(?=<div class="one_result"|$)', html_content, re.DOTALL)
